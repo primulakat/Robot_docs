@@ -1,4 +1,6 @@
-site_name: Robot_docs2
+site_name: Robot_docs
 nav:
   - Home: index.md
   - About: about.md
+  - OneMore: onemore.md
+
