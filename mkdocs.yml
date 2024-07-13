@@ -1,6 +1,12 @@
-site_name: Robot_docs
+site_name: Автоматизированная система управления заказами в роботизированном ресторане
 nav:
   - Home: index.md
-  - About: about.md
-  - OneMore: onemore.md
+  - Общее описание: about.md
+  - Требования к системе: index.md
+  - Информационная модель: onemore.md
+  - Компонентная архитектура: onemore.md
+  - API: onemore.md
+  - Пользовательский интерфейс: onemore.md
+  - Задачи: onemore.md
+  - Тест-кейсы: onemore.md
 
