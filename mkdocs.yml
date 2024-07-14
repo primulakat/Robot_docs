@@ -1,12 +1,43 @@
-site_name: Автоматизированная система управления заказами в роботизированном ресторане
-nav:
-  - Home: index.md
-  - Общее описание: about.md
-  - Требования к системе: index.md
-  - Информационная модель: onemore.md
-  - Компонентная архитектура: onemore.md
-  - API: onemore.md
-  - Пользовательский интерфейс: onemore.md
-  - Задачи: onemore.md
-  - Тест-кейсы: onemore.md
+site_name: Robot docs
 
+theme:
+  name: material
+
+
+nav:
+  - Общее описание:
+    - general_info/glossary.md
+    - general_info/purpose.md
+    - general_info/characteristics.md
+  - Требования к системе:
+    - requirements/nfr.md
+    - Функциональные требования:
+      - requirements/fr/use_case_diagram.md
+      - requirements/fr/uc01.md
+      - requirements/fr/uc02.md
+      - requirements/fr/uc03.md
+      - requirements/fr/uc04.md
+      - requirements/fr/uc05.md
+      - requirements/fr/uc06.md
+      - requirements/fr/uc07.md
+      - requirements/fr/uc08.md
+      - requirements/fr/uc09.md
+      - requirements/fr/uc10.md
+      - requirements/fr/uc11.md
+      - requirements/fr/uc12.md
+      - requirements/fr/uc13.md
+      - requirements/fr/uc14.md
+      - requirements/fr/uc15.md
+      - requirements/fr/uc16.md
+  - Информационная модель:
+    - onemore.md
+  - Компонентная архитектура:
+    - onemore.md
+  - API:
+    - onemore.md
+  - Пользовательский интерфейс:
+    - onemore.md
+  - Задачи:
+    - onemore.md
+  - Тест-кейсы:
+    - onemore.md
