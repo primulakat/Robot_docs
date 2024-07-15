@@ -2,4 +2,4 @@
 
 ### Диаграмма состояний сущности «Заказ».
 
-![](/img/state_diagram.png)
+![](../img/state_diagram.png)
