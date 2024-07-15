@@ -1,13 +1,9 @@
 site_name: Robot docs
 
-theme:
-  name: material
-
-
 nav:
   - Общее описание:
-    - general_info/glossary.md
     - general_info/purpose.md
+    - general_info/glossary.md
     - general_info/characteristics.md
   - Требования к системе:
     - requirements/nfr.md
@@ -30,14 +26,37 @@ nav:
       - requirements/fr/uc15.md
       - requirements/fr/uc16.md
   - Информационная модель:
-    - onemore.md
+    - information_model/model.md
+    - information_model/state.md
   - Компонентная архитектура:
-    - onemore.md
-  - API:
-    - onemore.md
-  - Пользовательский интерфейс:
-    - onemore.md
-  - Задачи:
-    - onemore.md
-  - Тест-кейсы:
-    - onemore.md
+    - architecture/reasoning.md
+    - architecture/components.md
+    - architecture/integrations.md
+#  - API:
+#    - onemore.md
+#  - Пользовательский интерфейс:
+#    - onemore.md
+#  - Задачи:
+#    - onemore.md
+#  - Тест-кейсы:
+#    - onemore.md
+
+theme:
+  name: material
+
+plugins:
+  - swagger-ui-tag
+  - mermaid2
+  - glightbox
+  - search
+  - build_plantuml:
+      render: 'server' # or "local" for local rendering
+      bin_path: '/usr/local/bin/plantuml' # ignored when render: server
+      server: 'http://www.plantuml.com/plantuml' # official plantuml server
+      disable_ssl_certificate_validation: true # for self-signed and invalid certs
+      output_format: 'svg' # or "png"
+      allow_multiple_roots: false # in case your codebase contains more locations for diagrams (all ending in diagram_root)
+      diagram_root: 'docs/diagrams' # should reside under docs_dir
+      output_folder: 'out'
+      input_folder: 'src'
+      input_extensions: '' # comma separated list of extensions to parse, by default every file is parsed
