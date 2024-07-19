@@ -9,6 +9,7 @@ nav:
     - requirements/nfr.md
     - Функциональные требования:
       - requirements/use_case_diagram.md
+#      - requirements/bpmn_diagram.md
       - requirements/uc01.md
       - requirements/uc02.md
       - requirements/uc03.md
@@ -33,23 +34,21 @@ nav:
     - architecture/reasoning.md
     - architecture/components.md
     - architecture/integrations.md
+  - Пользовательский интерфейс:
+    - user_interface/prototype.md
+    - Вайрфреймы:
+      - user_interface/wf01.md
+      - user_interface/wf02.md
+      - user_interface/wf03.md
+      - user_interface/wf04.md
+      - user_interface/wf05.md
+      - user_interface/wf06.md
+      - user_interface/wf07.md
+      - user_interface/wf08.md
+      - user_interface/wf09.md
+      - user_interface/wf10.md
 #  - API:
 #    - onemore.md
-#  - Пользовательский интерфейс:
-#    - user_interface/screen01.md
-#    - user_interface/screen02.md
-#    - user_interface/screen03.md
-#    - user_interface/screen04.md
-#    - user_interface/screen05.md
-#    - user_interface/screen06.md
-#    - user_interface/screen07.md
-#    - user_interface/screen08.md
-#    - user_interface/screen09.md
-#    - user_interface/screen10.md
-#    - user_interface/screen11.md
-#    - user_interface/screen12.md
-#    - user_interface/screen13.md
-#    - user_interface/screen14.md
 #  - Задачи:
 #    - onemore.md
 #  - Тест-кейсы:
