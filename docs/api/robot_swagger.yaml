@@ -1,0 +1,413 @@
+openapi: 3.0.0
+info:
+  version: '2'
+  title: Робот и точка
+  description: API для заказа блюд
+paths:
+  /orders:
+    post:
+      tags:
+        - Работа с заказом и корзиной
+      security:
+        - bearerAuth: []
+      summary: Оформление заказа 
+      description: Создает заказ пользователя
+      operationId: createOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        '201':
+          description: Заказ успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateOrderResponse'
+        '400':
+          description: Ошибка в заказе
+        '401':
+          description: Пользователь не авторизован
+        '500':
+          description: Внутренняя ошибка сервера
+    get:
+        tags:
+          - Работа с заказом и корзиной
+        security:
+          - bearerAuth: []
+        summary: Просмотр истории заказов 
+        description: Возвращает список заказов — постранично, с возможностью фильтрации
+        operationId: getOrders
+        parameters:
+          - name: limit
+            in: query
+            required: false
+            description: Число элементов на странице
+            schema:
+              type: integer
+          - name: offset
+            in: query
+            required: false
+            description: Номер первого элемента на странице
+            schema:
+              type: integer
+          - name: period
+            in: query
+            required: false
+            description: Фильтр по году оформления заказов
+            schema:
+              type: integer
+          - name: status
+            in: query
+            required: false
+            description: Фильтр по статусу заказов
+            schema:
+              type: string
+          - name: sort
+            in: query
+            required: false
+            description: Направление сортировки списка заказов
+            schema:
+              type: string
+              enum:
+              - desc
+              - asc
+        responses:
+          '200':
+            description: Список заказов
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/OrderList'
+          '401':
+            description: Пользователь не авторизован
+          '500':
+            description: Внутренняя ошибка сервера
+  
+  /orders/{orderId}/status:
+    get:
+      tags:
+        - Работа с заказом и корзиной
+      security:
+        - bearerAuth: []
+      summary: Получение статуса заказа 
+      description: Возвращает статус заказа
+      operationId: getStatus
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          description: Уникальный идентификатор заказа
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Статус заказа передан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderStatus'
+        '400':
+          description: Неверный формат идентификатора заказа
+        '401':
+          description: Пользователь не авторизован
+        '403':
+          description: Пользователь не имеет права на просмотр данного заказа
+        '404':
+          description: Заказ не найден
+        '500':
+          description: Внутренняя ошибка сервера
+  
+  /dishes/{dishId}/reviews:
+    post:
+      tags: 
+        - Работа отзывами
+      security:
+        - bearerAuth: []
+      summary: Добавление отзыва
+      description: Добавляет отзыв для определенного блюда
+      operationId: createReview
+      parameters:
+        - name: dishId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewRequest'
+      responses:
+        '201':
+          description: Отзыв успешно опубликован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewResponse'
+        '400':
+          description: Неверный формат идентификатора блюда
+        '401':
+          description: Пользователь не авторизован
+        '404':
+          description: Блюдо не найдено
+        '422':
+          description: Пользователь не существует
+        '500':
+          description: Внутренняя ошибка сервера
+
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    CreateOrderRequest:
+      type: object
+      required:
+        - userId
+        - place
+        - orderItems
+        - itemId
+        - quantity
+        - itemPrice
+      properties:
+        userId: 
+          type: string
+          format: uuid
+          description: Уникальный идентификатор пользователя
+        place:
+          type: string
+          enum:
+            - В зале
+            - На вынос
+        loyaltyPointsAdded:
+          type: integer
+          description: Начисляемые баллы по программе лояльности
+        loyaltyPointsCharged:
+          type: integer
+          description: Списываемые баллы по программе лояльности
+        orderItems:
+          type: array
+          description: Позиция заказа
+          items:
+            type: object
+            properties:
+              itemId:
+                type: string
+                format: uuid
+                description: Уникальный идентификатор блюда
+              quantity:
+                type: string
+                description: Количество единиц блюда
+              itemPrice:
+                type: number
+                format: float
+                description: Цена за единицу блюда
+    
+    CreateOrderResponse:
+      type: object
+      properties:
+        orderId:
+          type: string
+          format: uuid
+          description: Уникальный идентификатор заказа
+        userId: 
+          type: string
+          format: uuid
+          description: Уникальный идентификатор пользователя
+        timeCreated:
+          type: string
+          format: date-time
+          description: Время создания заказа
+        timeUpdated:
+          type: string
+          format: date-time
+          description: Время обновления заказа
+        place:
+          type: string
+          enum:
+            - В зале
+            - На вынос
+        loyaltyPointsAdded:
+          type: integer
+          description: Начисляемые баллы по программе лояльности
+        loyaltyPointsCharged:
+          type: integer
+          description: Списываемые баллы по программе лояльности
+        orderItems:
+          type: array
+          description: Позиция заказа
+          items:
+            type: object
+            properties:
+              itemId:
+                type: string
+                format: uuid
+                description: Уникальный идентификатор блюда
+              quantity:
+                type: string
+                description: Количество единиц блюда
+              itemPrice:
+                type: number
+                format: float
+                description: Цена за единицу блюда
+
+    OrderList:
+      type: object
+      required:
+        - items
+      title: ClientsResponse
+      properties:
+        ordersTotal:
+          type: integer
+          description: Общее количество заказов
+        items:
+          type: array
+          title: Items
+          items:
+            $ref: '#/components/schemas/Order'
+      
+    Order:  
+      type: object
+      properties:
+        orderId:
+          type: string
+          format: uuid
+          description: Уникальный идентификатор заказа
+        status:
+          type: string
+          format: uuid
+          description: Статус заказа
+        place:
+          type: string
+          enum:
+            - В зале
+            - На вынос
+        loyaltyPointsAdded:
+          type: integer
+          description: Начисляемые баллы по программе лояльности
+        loyaltyPointsCharged:
+          type: integer
+          description: Списываемые баллы по программе лояльности
+        orderSumm:
+          type: number
+          format: float
+          description: Сумма заказа
+        currency:
+          type: string
+          description: Валюта
+        timeCreated:
+          type: string
+          format: date-time
+          description: Время создания заказа
+        timeUpdated:
+          type: string
+          format: date-time
+          description: Время обновления заказа
+        orderItems:
+          type: array
+          description: Позиция заказа
+          items:
+            type: object
+            properties:
+              itemId:
+                type: string
+                format: uuid
+                description: Уникальный идентификатор блюда
+              quantity:
+                type: string
+                description: Количество единиц блюда
+              itemPrice:
+                type: number
+                format: float
+                description: Цена за единицу блюда
+              itemLink:
+                type: string
+                description: Ссылка на страницу блюда
+              itemImage:
+                type: string
+                description: Ссылка на изображение блюда
+
+    OrderStatus:
+      type: object
+      required:
+        - orderId
+        - status
+      properties:
+        status:
+          type: string
+          description: Статус заказа
+          enum:
+          - Создан
+          - Оплачен
+          - Готовится
+          - Готов
+          - На выдаче
+          - Получен
+          - Самоотказ
+          - Удален
+          
+    ReviewRequest:
+      type: object
+      required:
+        - grade
+        - userId
+      properties:
+        userId: 
+          type: string
+          format: uuid
+          description: Уникальный идентификатор пользователя
+        grade:
+          type: string
+          description: Оценка пользователя
+          enum:
+            - Отлично
+            - Хорошо
+            - Удовлетворительно
+            - Плохо
+            - Отвратительно
+        comment:
+          type: string
+          description: Комментарий пользователя
+    
+    ReviewResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+          description: Уникальный идентификатор пользователя
+        userName:
+          type: string
+          description: Имя пользователя
+        grade:
+          type: string
+          description: Оценка пользователя
+          enum:
+            - Отлично
+            - Хорошо
+            - Удовлетворительно
+            - Плохо
+            - Отвратительно
+        comment:
+          type: string
+          description: Комментарий пользователя
+        timeCreated:
+          type: string
+          format: date-time
+          description: Время создания отзыва
+        timeUpdated:
+          type: string
+          format: date-time
+          description: Время обновления отзыва
+
+servers:
+  # Added by API Auto Mocking Plugin
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/spoty/OTUS/2
