@@ -51,9 +51,9 @@ nav:
     - api/endpoints.md
     - api/api.md
 #  - Задачи:
-#    - onemore.md
+#    - tasks/onemore.md
 #  - Тест-кейсы:
-#    - onemore.md
+#    - test_cases/onemore.md
 
 theme:
   name: material
