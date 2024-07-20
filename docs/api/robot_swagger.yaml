@@ -172,8 +172,6 @@ paths:
     post:
       tags: 
         - Корзина
-      security:
-        - bearerAuth: []
       summary: Оплата заказа картой
       description: Инициирует процесс оплаты для указанного заказа и возвращает ссылку для перенаправления на платежный шлюз
       operationId: initiatePayment
@@ -214,8 +212,6 @@ paths:
     post:
       tags:
         - Корзина
-      security:
-        - bearerAuth: []
       summary: Оформление заказа 
       description: Создает заказ на основе текущего содержимого корзины
       operationId: createOrder
@@ -311,8 +307,6 @@ paths:
     get:
       tags:
         - Заказы
-      security:
-        - bearerAuth: []
       summary: Получение статуса заказа 
       description: Возвращает статус заказа
       operationId: getStatus
@@ -763,7 +757,6 @@ components:
       type: object
       required:
         - items
-      title: ClientsResponse
       properties:
         ordersTotal:
           description: Общее количество заказов
