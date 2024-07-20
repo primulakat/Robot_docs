@@ -1,18 +1,223 @@
 ---
 openapi: 3.0.0
 info:
-  version: '2'
+  version: '3'
   title: Робот и точка
-  description: API для заказа блюд
+  description: API для заказа блюд в роботизированном ресторане
 paths:
-  /orders:
+
+  /dishes:
+    get:
+      tags: 
+        - Меню
+      summary: Получение списка блюд
+      description: Возвращает список блюд — постранично
+      operationId: getDishes
+      parameters:
+        - in: query
+          name: category
+          description: Фильтр по категории блюда
+          schema:
+            type: string
+            enum:
+              - Комбо
+              - Бургеры
+              - Картошка
+              - Салаты
+              - Напитки
+              - Десерты
+        - in: query
+          name: page
+          description: Номер страницы для пагинации
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          description: Количество блюд на странице
+          name: pageSize
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Список блюд
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    description: Общее количество блюд, соответствующих фильтрам
+                    type: integer
+                  dishes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Dish'
+                  page:
+                    description: Текущая страница
+                    type: integer
+                    default: 1
+                  pageSize:
+                    description: Количество блюд на странице
+                    type: integer
+                    default: 20
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /dishes/{dishId}:
+    get:
+      tags: 
+       - Меню
+      summary: Получение данных о блюде
+      description: Возвращает информацию об одном блюде
+      operationId: getDish
+      parameters:
+        - name: dishId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Детали блюда
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DishFull'
+        '404':
+          description: Блюдо не найдено
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /cart/items:
+    post:
+      tags: 
+        - Корзина
+      summary: Добавление блюда в корзину
+      description: Добавляет указанное блюдо в корзину
+      operationId: addItemToCart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddItemRequest'
+      responses:
+        '201':
+          description: Блюдо успешно добавлено в корзину
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddItemResponse'
+        '400':
+          description: Неверный запрос, например, отсутствует идентификатор блюда или количество
+        '404':
+          description: Блюдо не найдено
+        '500':
+          description: Внутренняя ошибка сервера
+    get:
+      tags: 
+        - Корзина
+      summary: Просмотр корзины
+      description: Возвращает список товаров, находящихся в корзине
+      operationId: getCartItems
+      responses:
+        '200':
+          description: Список товаров в корзине
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartItemsResponse'
+        '404':
+          description: Корзина не найдена
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /cart/items/{itemId}:
+    patch:
+      tags: 
+        - Корзина
+      summary: Редактирование блюда в корзине
+      description: Обновляет количество указанного блюда в корзине
+      operationId: updateCartItem
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          description: Уникальный идентификатор блюда
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateItemRequest'
+      responses:
+        '200':
+          description: Информация о блюде успешно обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateItemResponse'
+        '400':
+          description: Неверный запрос, например, отсутствует количество
+        '404':
+          description: Блюдо не найдено в корзине
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /orders/{orderId}/payment:
+    post:
+      tags: 
+        - Корзина
+      security:
+        - bearerAuth: []
+      summary: Оплата заказа картой
+      description: Инициирует процесс оплаты для указанного заказа и возвращает ссылку для перенаправления на платежный шлюз
+      operationId: initiatePayment
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          description: Уникальный идентификатор заказа
+          schema:
+            type: string
+        - name: totalPrice
+          in: query
+          required: true
+          description: Общая стоимость блюд в корзине
+          schema:
+            type: string
+      responses:
+        '303':
+          description: Перенаправление на платежный шлюз
+          headers:
+            Location:
+              description: URL платежного шлюза
+              schema:
+                type: string
+              example: https://paymentgateway.com/checkout?transaction_id=123456789&amount=1000.00&currency=USD&return_url=https://yourwebsite.com/payment-success&cancel_url=https://yourwebsite.com/payment-cancel
+        '400':
+          description: Неверный запрос, например, неполные или некорректные данные
+        '401':
+          description: Пользователь не авторизован
+        '403':
+          description: Пользователь не имеет права на оплату данного заказа
+        '404':
+          description: Заказ не найден
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /orders/:
     post:
       tags:
-        - Работа с заказом и корзиной
+        - Корзина
       security:
         - bearerAuth: []
       summary: Оформление заказа 
-      description: Создает заказ пользователя
+      description: Создает заказ на основе текущего содержимого корзины
       operationId: createOrder
       requestBody:
         required: true
@@ -28,53 +233,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/CreateOrderResponse'
         '400':
-          description: Ошибка в заказе
-        '401':
-          description: Пользователь не авторизован
+          description: Неверный запрос, например, неполные или некорректные данные
+        '404':
+          description: Корзина не найдена
         '500':
           description: Внутренняя ошибка сервера
+    
     get:
         tags:
-          - Работа с заказом и корзиной
+          - Заказы
         security:
           - bearerAuth: []
-        summary: Просмотр истории заказов 
-        description: Возвращает список заказов — постранично, с возможностью фильтрации
+        summary: Просмотр истории заказов
+        description: Возвращает список заказов
         operationId: getOrders
         parameters:
           - name: limit
+            description: Число элементов на странице
             in: query
             required: false
-            description: Число элементов на странице
             schema:
               type: integer
           - name: offset
-            in: query
-            required: false
             description: Номер первого элемента на странице
+            in: query
+            required: false
             schema:
               type: integer
-          - name: period
-            in: query
-            required: false
-            description: Фильтр по году оформления заказов
-            schema:
-              type: integer
-          - name: status
-            in: query
-            required: false
-            description: Фильтр по статусу заказов
-            schema:
-              type: string
-          - name: sort
-            in: query
-            required: false
-            description: Направление сортировки списка заказов
-            schema:
-              type: string
-              enum:
-              - desc
-              - asc
         responses:
           '200':
             description: Список заказов
@@ -86,11 +271,46 @@ paths:
             description: Пользователь не авторизован
           '500':
             description: Внутренняя ошибка сервера
-  
+
+  /orders/{orderId}/:
+    get:
+      tags:
+        - Заказы
+      security:
+        - bearerAuth: []
+      summary: Получение данных о заказе 
+      description: Возвращает информацию о заказе
+      operationId: getOrder
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          description: Уникальный идентификатор заказа
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Информацию о заказе передана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderFull'
+        '400':
+          description: Неверный формат идентификатора заказа
+        '401':
+          description: Пользователь не авторизован
+        '403':
+          description: Пользователь не имеет права на просмотр данного заказа
+        '404':
+          description: Заказ не найден
+        '500':
+          description: Внутренняя ошибка сервера
+
   /orders/{orderId}/status:
     get:
       tags:
-        - Работа с заказом и корзиной
+        - Заказы
       security:
         - bearerAuth: []
       summary: Получение статуса заказа 
@@ -103,6 +323,7 @@ paths:
           description: Уникальный идентификатор заказа
           schema:
             type: string
+            format: uuid
       responses:
         '200':
           description: Статус заказа передан
@@ -124,10 +345,10 @@ paths:
   /dishes/{dishId}/reviews:
     post:
       tags: 
-        - Работа отзывами
+        - Отзывы
       security:
         - bearerAuth: []
-      summary: Добавление отзыва
+      summary: Добавление отзыва о блюде
       description: Добавляет отзыв для определенного блюда
       operationId: createReview
       parameters:
@@ -161,6 +382,11 @@ paths:
           description: Внутренняя ошибка сервера
 
 
+
+
+
+
+
 components:
   securitySchemes:
     bearerAuth:
@@ -168,96 +394,370 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+
+    Dish:
+      type: object
+      properties:
+        itemId:
+          description: Уникальный идентификатор блюда
+          type: string
+          format: uuid
+        name:
+          description: Наименование
+          type: string
+        price:
+          description: Стоимость
+          type: number
+          format: float
+        size:
+          description: Размер/объем
+          type: integer
+        calories:
+          description: Калорийность
+          type: integer
+        imageLink:
+          description: Ссылка на изображение
+          type: string
+          format: url
+          example: https://static.tildacdn.com/stor3864-3835-4938-b666-663263666265/31704890.jpg
+
+    DishFull:
+      type: object
+      properties:
+        itemId:
+          description: Уникальный идентификатор блюда
+          type: string
+          format: uuid
+        name:
+          description: Наименование
+          type: string
+        description:
+          description: Описание
+          type: string
+        price:
+          description: Стоимость
+          type: number
+          format: float
+        sum:
+          description: Сумма блюда с учетом ингредиентов
+          type: number
+          format: float
+        size:
+          description: Размер/объем
+          type: integer
+        calories:
+          description: Калорийность
+          type: integer
+        proteins:
+          description: Белки
+          type: number
+          format: float
+        fats:
+          description: Жиры
+          type: number
+          format: float
+        carbs:
+          description: Углеводы
+          type: number
+          format: float
+        type:
+          description: Тип блюда
+          type: string
+          enum:
+            - simple
+            - composite
+        imageLink:
+          description: Ссылка на изображение
+          type: string
+          format: url
+          example: https://static.tildacdn.com/stor3864-3835-4938-b666-663263666265/31704890.jpg
+        rating:
+          description: Средний балл рейтинга блюда
+          type: number
+          format: float
+        reviewTotal:
+          description: Количество отзывов о блюде
+          type: integer
+        ingredients:
+          type: array
+          title: Items
+          items:
+            $ref: '#/components/schemas/Ingredient'
+
+    Ingredient:
+      type: object
+      properties:
+        ingredientId:
+          description: Уникальный идентификатор ингредиента
+          type: string
+          format: uuid
+        name:
+          description: Наименование
+          type: string
+        price:
+          description: Стоимость
+          type: number
+          format: float
+        imageLink:
+          description: Ссылка на изображение
+          type: string
+          format: url
+          example: https://static.tildacdn.com/stor3864-3835-4938-b666-663263666265/31704890.jpg
+  
+    AddItemRequest:
+      type: object
+      required:
+        - id
+        - quantity
+      properties:
+        itemId:
+          description: Уникальный идентификатор блюда
+          type: string
+          format: uuid
+        ingredients:
+          type: array
+          title: Ингредиент
+          items:
+            $ref: '#/components/schemas/Ingredient'
+        quantity:
+          description: Количество единиц блюда
+          type: integer
+        itemPrice:
+          description: Цена за единицу блюда
+          type: number
+          format: float        
+
+    AddItemResponse:
+      type: object
+      properties:
+        message:
+          description: Сообщение о результате добавления
+          type: string
+        cartTotal:
+          description: Общее количество блюд в корзине
+          type: integer
+        totalPrice:
+          description: Общая стоимость блюд в корзине
+          type: number
+          format: float
+           
+    CartItemsResponse:
+      type: object
+      properties:
+        items:
+          description: Список товаров в корзине
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+        cartTotal:
+          description: Общее количество блюд в корзине
+          type: integer
+        totalPrice:
+          description: Общая стоимость блюд в корзине
+          type: number
+          format: float
+          
+    UpdateItemRequest:
+      type: object
+      required:
+        - quantity
+      properties:
+        quantity:
+          type: integer
+          description: Новое количество единиц блюда
+
+    UpdateItemResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Сообщение о результате обновления
+        updatedItem:
+          $ref: '#/components/schemas/CartItem'
+  
+    CartItem:
+      type: object
+      properties:
+        itemId:
+          description: Уникальный идентификатор блюда
+          type: string
+          format: uuid
+        name:
+          description: Наименование
+          type: string
+        price:
+          description: Стоимость
+          type: number
+          format: float
+        size:
+          description: Размер/объем
+          type: integer
+        calories:
+          description: Калорийность
+          type: integer
+        imageLink:
+          description: Ссылка на изображение
+          type: string
+          format: url
+          example: https://static.tildacdn.com/stor3864-3835-4938-b666-663263666265/31704890.jpg
+        cartTotal:
+          description: Общее количество блюд в корзине
+          type: integer
+        totalPrice:
+          description: Общая стоимость блюд в корзине
+          type: number
+          format: float
+  
     CreateOrderRequest:
       type: object
       required:
-        - userId
         - place
+        - paymentType
         - orderItems
         - itemId
         - quantity
         - itemPrice
       properties:
         userId: 
+          description: Уникальный идентификатор пользователя
           type: string
           format: uuid
-          description: Уникальный идентификатор пользователя
+        userName: 
+          description: Имя пользователя
+          type: string
+        userEmail: 
+          description: Электронная почта пользователя
+          type: string
+        userPhone: 
+          description: Номер телефона пользователя
+          type: string
         place:
+          description: Способ получения заказа
           type: string
           enum:
             - В зале
             - На вынос
+          default: В зале
+        time:
+          description: время получения заказа
+          type: string
+          format: date-time
+        paymentType:
+          description: Способ оплаты заказа
+          type: string
+          enum:
+            - Банковской картой
+            - Наличными при получении
+          default: Банковской картой
         loyaltyPointsAdded:
-          type: integer
           description: Начисляемые баллы по программе лояльности
-        loyaltyPointsCharged:
           type: integer
+        loyaltyPointsCharged:
           description: Списываемые баллы по программе лояльности
+          type: integer
         orderItems:
           type: array
           description: Позиция заказа
           items:
-            type: object
-            properties:
-              itemId:
-                type: string
-                format: uuid
-                description: Уникальный идентификатор блюда
-              quantity:
-                type: string
-                description: Количество единиц блюда
-              itemPrice:
-                type: number
-                format: float
-                description: Цена за единицу блюда
+            $ref: '#/components/schemas/OrderItemRequest'
     
     CreateOrderResponse:
       type: object
       properties:
         orderId:
-          type: string
-          format: uuid
           description: Уникальный идентификатор заказа
-        userId: 
           type: string
           format: uuid
+        userId: 
           description: Уникальный идентификатор пользователя
+          type: string
+          format: uuid
+        userName: 
+          description: Имя пользователя
+          type: string
+        userEmail: 
+          description: Электронная почта пользователя
+          type: string
+        userPhone: 
+          description: Номер телефона пользователя
+          type: string
         timeCreated:
-          type: string
-          format: date-time
           description: Время создания заказа
-        timeUpdated:
           type: string
           format: date-time
-          description: Время обновления заказа
         place:
+          description: Способ получения заказа
           type: string
           enum:
             - В зале
             - На вынос
+        time:
+          description: время получения заказа
+          type: string
+          format: date-time
+        paymentType:
+          description: Способ оплаты заказа
+          type: string
+          enum:
+            - Банковской картой
+            - Наличными при получении
+          default: Банковской картой
         loyaltyPointsAdded:
-          type: integer
           description: Начисляемые баллы по программе лояльности
-        loyaltyPointsCharged:
           type: integer
+        loyaltyPointsCharged:
           description: Списываемые баллы по программе лояльности
+          type: integer
         orderItems:
-          type: array
           description: Позиция заказа
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItemResponse'
+
+    OrderItemRequest:
+      type: object
+      required:
+        - id
+        - quantity
+      properties:
+        itemId:
+          description: Уникальный идентификатор блюда
+          type: string
+          format: uuid
+        quantity:
+          description: Количество единиц блюда
+          type: integer
+        itemPrice:
+          description: Цена за единицу блюда
+          type: number
+          format: float
+        ingredients:
+          type: array
+          title: Ингредиент
           items:
             type: object
             properties:
               itemId:
+                description: Уникальный идентификатор ингредиента
                 type: string
                 format: uuid
-                description: Уникальный идентификатор блюда
-              quantity:
-                type: string
-                description: Количество единиц блюда
-              itemPrice:
-                type: number
-                format: float
-                description: Цена за единицу блюда
+          
+    OrderItemResponse:
+      type: object
+      properties:
+        itemId:
+          description: Уникальный идентификатор блюда
+          type: string
+          format: uuid
+        quantity:
+          description: Количество единиц блюда
+          type: integer
+        itemPrice:
+          description: Цена за единицу блюда
+          type: number
+          format: float
+        ingredients:
+          $ref: '#/components/schemas/Ingredient'
 
     OrderList:
       type: object
@@ -266,9 +766,10 @@ components:
       title: ClientsResponse
       properties:
         ordersTotal:
-          type: integer
           description: Общее количество заказов
+          type: integer
         items:
+          description: Список заказов
           type: array
           title: Items
           items:
@@ -277,79 +778,162 @@ components:
     Order:  
       type: object
       properties:
+        userId: 
+          description: Уникальный идентификатор пользователя
+          type: string
+          format: uuid
         orderId:
-          type: string
-          format: uuid
           description: Уникальный идентификатор заказа
-        status:
           type: string
           format: uuid
+        status:
           description: Статус заказа
-        place:
           type: string
           enum:
-            - В зале
-            - На вынос
-        loyaltyPointsAdded:
-          type: integer
-          description: Начисляемые баллы по программе лояльности
-        loyaltyPointsCharged:
-          type: integer
-          description: Списываемые баллы по программе лояльности
+          - Создан
+          - Готовится
+          - Готов
+          - На выдаче
+          - Отменен
+          - Получен
+          - Самоотказ
+          - Удален
         orderSumm:
+          description: Сумма заказа
           type: number
           format: float
-          description: Сумма заказа
-        currency:
-          type: string
-          description: Валюта
         timeCreated:
-          type: string
-          format: date-time
           description: Время создания заказа
-        timeUpdated:
           type: string
           format: date-time
-          description: Время обновления заказа
         orderItems:
-          type: array
           description: Позиция заказа
+          type: array
           items:
             type: object
             properties:
               itemId:
+                  description: Уникальный идентификатор блюда
+                  type: string
+                  format: uuid
+              imageLink:
+                description: Ссылка на изображение
                 type: string
-                format: uuid
-                description: Уникальный идентификатор блюда
-              quantity:
-                type: string
-                description: Количество единиц блюда
-              itemPrice:
-                type: number
-                format: float
-                description: Цена за единицу блюда
-              itemLink:
-                type: string
-                description: Ссылка на страницу блюда
-              itemImage:
-                type: string
-                description: Ссылка на изображение блюда
+                format: url
+                example: https://static.tildacdn.com/stor3864-3835-4938-b666-663263666265/31704890.jpg
 
+    OrderFull:  
+      type: object
+      properties:
+        userId: 
+          description: Уникальный идентификатор пользователя
+          type: string
+          format: uuid
+        orderId:
+          description: Уникальный идентификатор заказа
+          type: string
+          format: uuid
+        orderNumber:
+          description: Номер для получения заказа в ресторане
+          type: integer
+        status:
+          description: Статус заказа
+          type: string
+          enum:
+          - Создан
+          - Готовится
+          - Готов
+          - На выдаче
+          - Отменен
+          - Получен
+          - Самоотказ
+          - Удален
+        place:
+          description: Способ получения заказа
+          type: string
+          enum:
+            - В зале
+            - На вынос
+        time:
+          description: время получения заказа
+          type: string
+          format: date-time
+        paymentType:
+          description: Способ оплаты заказа
+          type: string
+          enum:
+            - Банковской картой
+            - Наличными при получении
+          default: Банковской картой
+        loyaltyPointsAdded:
+          description: Начисляемые баллы по программе лояльности
+          type: integer
+        loyaltyPointsCharged:
+          description: Списываемые баллы по программе лояльности
+          type: integer
+        orderSumm:
+          description: Сумма заказа
+          type: number
+          format: float
+        timeCreated:
+          description: Время создания заказа
+          type: string
+          format: date-time
+        orderItems:
+          description: Позиция заказа
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+
+    OrderItem:
+      type: object
+      properties:
+        itemId:
+            description: Уникальный идентификатор блюда
+            type: string
+            format: uuid
+        name:
+          description: Наименование
+          type: string
+        price:
+          description: Стоимость
+          type: number
+          format: float
+        size:
+          description: Размер/объем
+          type: integer
+        calories:
+          description: Калорийность
+          type: integer
+        imageLink:
+          description: Ссылка на изображение
+          type: string
+          format: url
+          example: https://static.tildacdn.com/stor3864-3835-4938-b666-663263666265/31704890.jpg
+    
     OrderStatus:
       type: object
       required:
         - orderId
         - status
+        - orderNumber
       properties:
-        status:
+        orderId:
+          description: Уникальный идентификатор заказа
           type: string
+          format: uuid
+        orderNumber:
+          description: Номер для получения заказа в ресторане
+          type: integer
+        status:
           description: Статус заказа
+          type: string
           enum:
           - Создан
-          - Оплачен
           - Готовится
           - Готов
           - На выдаче
+          - Отменен
           - Получен
           - Самоотказ
           - Удален
@@ -361,54 +945,72 @@ components:
         - userId
       properties:
         userId: 
+          description: Уникальный идентификатор пользователя
           type: string
           format: uuid
-          description: Уникальный идентификатор пользователя
+        dishId:
+            description: Уникальный идентификатор блюда
+            type: string
+            format: uuid
         grade:
-          type: string
-          description: Оценка пользователя
+          description: Оценка
+          type: integer
           enum:
-            - Отлично
-            - Хорошо
-            - Удовлетворительно
-            - Плохо
-            - Отвратительно
-        comment:
+            - 1
+            - 2
+            - 3
+            - 4
+            - 5
+        positive:
+          description: Достоинства
           type: string
-          description: Комментарий пользователя
+        negative:
+          description: Недостатки
+          type: string
+        comment:
+          description: Комментарий к отзыву
+          type: string
     
     ReviewResponse:
       type: object
       properties:
         userId:
+          description: Уникальный идентификатор пользователя
           type: string
           format: uuid
-          description: Уникальный идентификатор пользователя
-        userName:
-          type: string
-          description: Имя пользователя
+        reviewId:
+            description: Уникальный идентификатор отзыва
+            type: string
+            format: uuid
+        dishId:
+            description: Уникальный идентификатор блюда
+            type: string
+            format: uuid
         grade:
-          type: string
-          description: Оценка пользователя
+          description: Оценка
+          type: integer
           enum:
-            - Отлично
-            - Хорошо
-            - Удовлетворительно
-            - Плохо
-            - Отвратительно
+            - 1
+            - 2
+            - 3
+            - 4
+            - 5
+        positive:
+          description: Достоинства
+          type: string
+        negative:
+          description: Недостатки
+          type: string
         comment:
+          description: Комментарий к отзыву
           type: string
-          description: Комментарий пользователя
         timeCreated:
-          type: string
-          format: date-time
           description: Время создания отзыва
-        timeUpdated:
           type: string
           format: date-time
-          description: Время обновления отзыва
+          
 
 servers:
   # Added by API Auto Mocking Plugin
   - description: SwaggerHub API Auto Mocking
-    url: https://virtserver.swaggerhub.com/spoty/OTUS/2
+    url: https://virtserver.swaggerhub.com/spoty/OTUS/3

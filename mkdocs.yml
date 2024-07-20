@@ -47,8 +47,9 @@ nav:
       - user_interface/wf08.md
       - user_interface/wf09.md
       - user_interface/wf10.md
-#  - API:
-#    - onemore.md
+  - API:
+    - api/endpoints.md
+    - api/api.md
 #  - Задачи:
 #    - onemore.md
 #  - Тест-кейсы:
@@ -56,6 +57,10 @@ nav:
 
 theme:
   name: material
+
+markdown_extensions:
+  - attr_list
+  - admonition
 
 plugins:
   - swagger-ui-tag
