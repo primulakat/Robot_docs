@@ -182,12 +182,19 @@ paths:
           description: Уникальный идентификатор заказа
           schema:
             type: string
-        - name: totalPrice
-          in: query
-          required: true
-          description: Общая стоимость блюд в корзине
-          schema:
-            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - totalPrice
+              properties:
+                totalPrice:
+                  description: Общая стоимость блюд в корзине
+                  type: number
+                  format: float  
       responses:
         '303':
           description: Перенаправление на платежный шлюз

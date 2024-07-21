@@ -6,7 +6,7 @@
 | **`GET`** /dishes/{dishId}           | Получение данных о блюде       |
 | **`POST`** /cart/items               | Добавление блюда в корзину     |
 | **`GET`** /cart/items                | Просмотр корзины               |
-| **`PUT`** /cart/items/{itemId}       | Редактирование блюда в корзине |
+| **`PATCH`** /cart/items/{itemId}     | Редактирование блюда в корзине |
 | **`POST`** /orders/{orderId}/payment | Оплата заказа картой           |
 | **`POST`** /orders                   | Оформление заказа              |
 | **`GET`** /orders                    | Просмотр истории заказов       |
