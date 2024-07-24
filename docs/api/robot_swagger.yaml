@@ -5,7 +5,7 @@ info:
   title: Робот и точка
   description: API для заказа блюд в роботизированном ресторане
 paths:
-
+  
   /dishes:
     get:
       tags: 
@@ -379,6 +379,145 @@ paths:
           description: Блюдо не найдено
         '422':
           description: Пользователь не существует
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /users/send-code:
+    post:
+      tags: 
+        - Пользователь
+      summary: Отправка кода подтверждения
+      description: Отправляет код подтверждения на телефон пользователя
+      operationId: sendCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phoneNumber
+              properties:
+                phoneNumber:
+                  description: Номер телефона пользователя
+                  type: string
+      responses:
+        '200':
+          description: Код успешно отправлен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  authCode:
+                    type: string
+                    description: Код подтверждения
+                    example: 5478
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /users:     
+    post:
+      tags:
+      - Пользователь
+      summary: Создание нового пользователя
+      description: Создание нового пользователя.
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phoneNumber
+                - authCode
+              properties:
+                phoneNumber:
+                  description: Номер телефона пользователя
+                  type: string
+                authCode:
+                  description: Код подтверждения
+                  type: string
+      responses:
+        "200":
+          description: Пользователь успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCreate'
+        '401':
+          description: Некорректный номер телефона
+
+  /users/login:
+    post:
+      tags: 
+        - Пользователь
+      summary: Аутентификация пользователя
+      description: Позволяет пользователю войти в систему, используя номер телефона и код подтверждения
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phoneNumber
+                - authCode
+              properties:
+                phoneNumber:
+                  description: Номер телефона пользователя
+                  type: string
+                authCode:
+                  description: Код подтверждения
+                  type: string
+      responses:
+        '200':
+          description: Успешная аутентификация
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    format: JWT
+                    description: Токен доступа
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkhhcnJ5IFBvdHRlciIsImlhdCI6MTUxNjIzOTAyMn0.Jkr1iBrO9-cr7uZRYhvE8BuSXIfuPnQWuZBNBE60t14
+        '401':
+          description: Неверные учетные данные
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /users/{userId}:
+    get:
+      tags:
+        - Пользователь
+      summary: Получение информации о пользователе
+      description: Возвращает данные пользователя
+      operationId: getProfile
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: Уникальный идентификатор пользователя
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Данные пользователя переданы
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          description: Пользователь не авторизован
+        '403':
+          description: Пользователь не имеет права на просмотр профиля
+        '404':
+          description: Пользователь не найден
         '500':
           description: Внутренняя ошибка сервера
 
@@ -1009,6 +1148,54 @@ components:
           type: string
           format: date-time
           
+    UserCreate:
+      type: object
+      required:
+        - userId
+        - phoneNumber
+      properties:
+        userId:
+          description: Уникальный идентификатор пользователя
+          type: string
+          format: uuid
+        phoneNumber:
+          description: Номер телефона пользователя
+          type: string
+        timeCreated:
+          description: Дата регистрации пользователя
+          type: string
+          format: date-time
+
+    UserProfile:
+      type: object
+      required:
+        - userId
+        - phoneNumber
+      properties:
+        userId:
+          description: Уникальный идентификатор пользователя
+          type: string
+          format: uuid
+        firstName:
+          description: Имя пользователя
+          type: string
+        lastName:
+          description: Фамилия пользователя
+          type: string
+        birthday:
+          description: Дата рождения пользователя
+          type: string
+          format: date-time
+        phoneNumber:
+          description: Номер телефона пользователя
+          type: string
+        email:
+          description: Электронная почта пользователя
+          type: string
+        timeCreated:
+          description: Дата регистрации пользователя
+          type: string
+          format: date-time
 
 servers:
   # Added by API Auto Mocking Plugin

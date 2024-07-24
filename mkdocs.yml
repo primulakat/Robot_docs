@@ -47,13 +47,17 @@ nav:
       - user_interface/wf08.md
       - user_interface/wf09.md
       - user_interface/wf10.md
+      - user_interface/wf11.md
+      - user_interface/wf12.md
   - API:
     - api/endpoints.md
     - api/api.md
-#  - Задачи:
-#    - tasks/onemore.md
+  - Задачи:
+    - tasks/tasks_mvp.md
+    - tasks/tasks_1release.md
 #  - Тест-кейсы:
-#    - test_cases/onemore.md
+#    - test_cases/test_cases_mvp.md
+#    - test_cases/test_cases_1release.md
 
 theme:
   name: material
