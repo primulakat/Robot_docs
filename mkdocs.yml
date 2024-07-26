@@ -24,9 +24,6 @@ nav:
       - requirements/uc12.md
       - requirements/uc13.md
       - requirements/uc14.md
-      - requirements/uc15.md
-      - requirements/uc16.md
-      - requirements/uc17.md
   - Информационная модель:
     - information_model/model.md
     - information_model/state.md

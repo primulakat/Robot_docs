@@ -5,7 +5,37 @@ info:
   title: Робот и точка
   description: API для заказа блюд в роботизированном ресторане
 paths:
-  
+
+  /categories:
+    get:    
+      tags: 
+        - Меню
+      summary: Получение списка категорий меню
+      description: Возвращает список категорий меню
+      operationId: getCategories
+      responses:
+        '200':
+          description: Список категорий меню
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  categories:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        categoryId:
+                          description: Уникальный идентификатор категории
+                          type: string
+                          format: uuid
+                        name:
+                          description: Наименование
+                          type: string
+        '500':
+          description: Внутренняя ошибка сервера
+
   /dishes:
     get:
       tags: 
@@ -168,20 +198,13 @@ paths:
         '500':
           description: Внутренняя ошибка сервера
 
-  /orders/{orderId}/payment:
+  /orders/payment:
     post:
       tags: 
         - Корзина
       summary: Оплата заказа картой
       description: Инициирует процесс оплаты для указанного заказа и возвращает ссылку для перенаправления на платежный шлюз
       operationId: initiatePayment
-      parameters:
-        - name: orderId
-          in: path
-          required: true
-          description: Уникальный идентификатор заказа
-          schema:
-            type: string
       requestBody:
         required: true
         content:
@@ -189,12 +212,17 @@ paths:
             schema:
               type: object
               required:
+                - orderId
                 - totalPrice
               properties:
+                orderId:
+                  description: Уникальный идентификатор заказа
+                  type: string
+                  format: uuid
                 totalPrice:
                   description: Общая стоимость блюд в корзине
                   type: number
-                  format: float  
+                  format: float
       responses:
         '303':
           description: Перенаправление на платежный шлюз
