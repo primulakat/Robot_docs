@@ -1,0 +1,1231 @@
+---
+openapi: 3.0.0
+info:
+  version: '3'
+  title: Робот и точка
+  description: API для заказа блюд в роботизированном ресторане
+paths:
+
+  /categories:
+    get:    
+      tags: 
+        - Меню
+      summary: Получение списка категорий меню
+      description: Возвращает список категорий меню
+      operationId: getCategories
+      responses:
+        '200':
+          description: Список категорий меню
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  categories:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        categoryId:
+                          description: Уникальный идентификатор категории
+                          type: string
+                          format: uuid
+                        name:
+                          description: Наименование
+                          type: string
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /dishes:
+    get:
+      tags: 
+        - Меню
+      summary: Получение списка блюд
+      description: Возвращает список блюд — постранично
+      operationId: getDishes
+      parameters:
+        - in: query
+          name: category
+          description: Фильтр по категории блюда
+          schema:
+            type: string
+            enum:
+              - Комбо
+              - Бургеры
+              - Картошка
+              - Салаты
+              - Напитки
+              - Десерты
+        - in: query
+          name: page
+          description: Номер страницы для пагинации
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          description: Количество блюд на странице
+          name: pageSize
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Список блюд
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    description: Общее количество блюд, соответствующих фильтрам
+                    type: integer
+                  dishes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Dish'
+                  page:
+                    description: Текущая страница
+                    type: integer
+                    default: 1
+                  pageSize:
+                    description: Количество блюд на странице
+                    type: integer
+                    default: 20
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /dishes/{dishId}:
+    get:
+      tags: 
+       - Меню
+      summary: Получение данных о блюде
+      description: Возвращает информацию об одном блюде
+      operationId: getDish
+      parameters:
+        - name: dishId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Детали блюда
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DishFull'
+        '404':
+          description: Блюдо не найдено
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /cart/items:
+    post:
+      tags: 
+        - Корзина
+      summary: Добавление блюда в корзину
+      description: Добавляет указанное блюдо в корзину
+      operationId: addItemToCart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddItemRequest'
+      responses:
+        '201':
+          description: Блюдо успешно добавлено в корзину
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddItemResponse'
+        '400':
+          description: Неверный запрос, например, отсутствует идентификатор блюда или количество
+        '404':
+          description: Блюдо не найдено
+        '500':
+          description: Внутренняя ошибка сервера
+    get:
+      tags: 
+        - Корзина
+      summary: Просмотр корзины
+      description: Возвращает список товаров, находящихся в корзине
+      operationId: getCartItems
+      responses:
+        '200':
+          description: Список товаров в корзине
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartItemsResponse'
+        '404':
+          description: Корзина не найдена
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /cart/items/{itemId}:
+    patch:
+      tags: 
+        - Корзина
+      summary: Редактирование блюда в корзине
+      description: Обновляет количество указанного блюда в корзине
+      operationId: updateCartItem
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          description: Уникальный идентификатор блюда
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateItemRequest'
+      responses:
+        '200':
+          description: Информация о блюде успешно обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateItemResponse'
+        '400':
+          description: Неверный запрос, например, отсутствует количество
+        '404':
+          description: Блюдо не найдено в корзине
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /orders/payment:
+    post:
+      tags: 
+        - Корзина
+      summary: Оплата заказа картой
+      description: Инициирует процесс оплаты для указанного заказа и возвращает ссылку для перенаправления на платежный шлюз
+      operationId: initiatePayment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - orderId
+                - totalPrice
+              properties:
+                orderId:
+                  description: Уникальный идентификатор заказа
+                  type: string
+                  format: uuid
+                totalPrice:
+                  description: Общая стоимость блюд в корзине
+                  type: number
+                  format: float
+      responses:
+        '303':
+          description: Перенаправление на платежный шлюз
+          headers:
+            Location:
+              description: URL платежного шлюза
+              schema:
+                type: string
+              example: https://paymentgateway.com/checkout?transaction_id=123456789&amount=1000.00&currency=USD&return_url=https://yourwebsite.com/payment-success&cancel_url=https://yourwebsite.com/payment-cancel
+        '400':
+          description: Неверный запрос, например, неполные или некорректные данные
+        '401':
+          description: Пользователь не авторизован
+        '403':
+          description: Пользователь не имеет права на оплату данного заказа
+        '404':
+          description: Заказ не найден
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /orders/:
+    post:
+      tags:
+        - Корзина
+      summary: Оформление заказа 
+      description: Создает заказ на основе текущего содержимого корзины
+      operationId: createOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        '201':
+          description: Заказ успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateOrderResponse'
+        '400':
+          description: Неверный запрос, например, неполные или некорректные данные
+        '404':
+          description: Корзина не найдена
+        '500':
+          description: Внутренняя ошибка сервера
+    
+    get:
+        tags:
+          - Заказы
+        security:
+          - bearerAuth: []
+        summary: Просмотр истории заказов
+        description: Возвращает список заказов
+        operationId: getOrders
+        parameters:
+          - name: limit
+            description: Число элементов на странице
+            in: query
+            required: false
+            schema:
+              type: integer
+          - name: offset
+            description: Номер первого элемента на странице
+            in: query
+            required: false
+            schema:
+              type: integer
+        responses:
+          '200':
+            description: Список заказов
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/OrderList'
+          '401':
+            description: Пользователь не авторизован
+          '500':
+            description: Внутренняя ошибка сервера
+
+  /orders/{orderId}/:
+    get:
+      tags:
+        - Заказы
+      security:
+        - bearerAuth: []
+      summary: Получение данных о заказе 
+      description: Возвращает информацию о заказе
+      operationId: getOrder
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          description: Уникальный идентификатор заказа
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Информацию о заказе передана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderFull'
+        '400':
+          description: Неверный формат идентификатора заказа
+        '401':
+          description: Пользователь не авторизован
+        '403':
+          description: Пользователь не имеет права на просмотр данного заказа
+        '404':
+          description: Заказ не найден
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /orders/{orderId}/status:
+    get:
+      tags:
+        - Заказы
+      summary: Получение статуса заказа 
+      description: Возвращает статус заказа
+      operationId: getStatus
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          description: Уникальный идентификатор заказа
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Статус заказа передан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderStatus'
+        '400':
+          description: Неверный формат идентификатора заказа
+        '401':
+          description: Пользователь не авторизован
+        '403':
+          description: Пользователь не имеет права на просмотр данного заказа
+        '404':
+          description: Заказ не найден
+        '500':
+          description: Внутренняя ошибка сервера
+  
+  /dishes/{dishId}/reviews:
+    post:
+      tags: 
+        - Отзывы
+      security:
+        - bearerAuth: []
+      summary: Добавление отзыва о блюде
+      description: Добавляет отзыв для определенного блюда
+      operationId: createReview
+      parameters:
+        - name: dishId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewRequest'
+      responses:
+        '201':
+          description: Отзыв успешно опубликован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewResponse'
+        '400':
+          description: Неверный формат идентификатора блюда
+        '401':
+          description: Пользователь не авторизован
+        '404':
+          description: Блюдо не найдено
+        '422':
+          description: Пользователь не существует
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /users/send-code:
+    post:
+      tags: 
+        - Пользователь
+      summary: Отправка кода подтверждения
+      description: Отправляет код подтверждения на телефон пользователя
+      operationId: sendCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phoneNumber
+              properties:
+                phoneNumber:
+                  description: Номер телефона пользователя
+                  type: string
+      responses:
+        '200':
+          description: Код успешно отправлен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  authCode:
+                    type: string
+                    description: Код подтверждения
+                    example: 5478
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /users:     
+    post:
+      tags:
+      - Пользователь
+      summary: Создание нового пользователя
+      description: Создание нового пользователя.
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phoneNumber
+                - authCode
+              properties:
+                phoneNumber:
+                  description: Номер телефона пользователя
+                  type: string
+                authCode:
+                  description: Код подтверждения
+                  type: string
+      responses:
+        "200":
+          description: Пользователь успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCreate'
+        '401':
+          description: Некорректный номер телефона
+
+  /users/login:
+    post:
+      tags: 
+        - Пользователь
+      summary: Аутентификация пользователя
+      description: Позволяет пользователю войти в систему, используя номер телефона и код подтверждения
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phoneNumber
+                - authCode
+              properties:
+                phoneNumber:
+                  description: Номер телефона пользователя
+                  type: string
+                authCode:
+                  description: Код подтверждения
+                  type: string
+      responses:
+        '200':
+          description: Успешная аутентификация
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    format: JWT
+                    description: Токен доступа
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkhhcnJ5IFBvdHRlciIsImlhdCI6MTUxNjIzOTAyMn0.Jkr1iBrO9-cr7uZRYhvE8BuSXIfuPnQWuZBNBE60t14
+        '401':
+          description: Неверные учетные данные
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /users/{userId}:
+    get:
+      tags:
+        - Пользователь
+      summary: Получение информации о пользователе
+      description: Возвращает данные пользователя
+      operationId: getProfile
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: Уникальный идентификатор пользователя
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Данные пользователя переданы
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          description: Пользователь не авторизован
+        '403':
+          description: Пользователь не имеет права на просмотр профиля
+        '404':
+          description: Пользователь не найден
+        '500':
+          description: Внутренняя ошибка сервера
+
+
+
+
+
+
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+
+    Dish:
+      type: object
+      properties:
+        itemId:
+          description: Уникальный идентификатор блюда
+          type: string
+          format: uuid
+        name:
+          description: Наименование
+          type: string
+        price:
+          description: Стоимость
+          type: number
+          format: float
+        size:
+          description: Размер/объем
+          type: integer
+        calories:
+          description: Калорийность
+          type: integer
+        imageLink:
+          description: Ссылка на изображение
+          type: string
+          format: url
+          example: https://static.tildacdn.com/stor3864-3835-4938-b666-663263666265/31704890.jpg
+
+    DishFull:
+      type: object
+      properties:
+        itemId:
+          description: Уникальный идентификатор блюда
+          type: string
+          format: uuid
+        name:
+          description: Наименование
+          type: string
+        description:
+          description: Описание
+          type: string
+        price:
+          description: Стоимость
+          type: number
+          format: float
+        sum:
+          description: Сумма блюда с учетом ингредиентов
+          type: number
+          format: float
+        size:
+          description: Размер/объем
+          type: integer
+        calories:
+          description: Калорийность
+          type: integer
+        proteins:
+          description: Белки
+          type: number
+          format: float
+        fats:
+          description: Жиры
+          type: number
+          format: float
+        carbs:
+          description: Углеводы
+          type: number
+          format: float
+        type:
+          description: Тип блюда
+          type: string
+          enum:
+            - simple
+            - composite
+        imageLink:
+          description: Ссылка на изображение
+          type: string
+          format: url
+          example: https://static.tildacdn.com/stor3864-3835-4938-b666-663263666265/31704890.jpg
+        rating:
+          description: Средний балл рейтинга блюда
+          type: number
+          format: float
+        reviewTotal:
+          description: Количество отзывов о блюде
+          type: integer
+        ingredients:
+          type: array
+          title: Items
+          items:
+            $ref: '#/components/schemas/Ingredient'
+
+    Ingredient:
+      type: object
+      properties:
+        ingredientId:
+          description: Уникальный идентификатор ингредиента
+          type: string
+          format: uuid
+        name:
+          description: Наименование
+          type: string
+        price:
+          description: Стоимость
+          type: number
+          format: float
+        imageLink:
+          description: Ссылка на изображение
+          type: string
+          format: url
+          example: https://static.tildacdn.com/stor3864-3835-4938-b666-663263666265/31704890.jpg
+  
+    AddItemRequest:
+      type: object
+      required:
+        - id
+        - quantity
+      properties:
+        itemId:
+          description: Уникальный идентификатор блюда
+          type: string
+          format: uuid
+        ingredients:
+          type: array
+          title: Ингредиент
+          items:
+            $ref: '#/components/schemas/Ingredient'
+        quantity:
+          description: Количество единиц блюда
+          type: integer
+        itemPrice:
+          description: Цена за единицу блюда
+          type: number
+          format: float        
+
+    AddItemResponse:
+      type: object
+      properties:
+        message:
+          description: Сообщение о результате добавления
+          type: string
+        cartTotal:
+          description: Общее количество блюд в корзине
+          type: integer
+        totalPrice:
+          description: Общая стоимость блюд в корзине
+          type: number
+          format: float
+           
+    CartItemsResponse:
+      type: object
+      properties:
+        items:
+          description: Список товаров в корзине
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+        cartTotal:
+          description: Общее количество блюд в корзине
+          type: integer
+        totalPrice:
+          description: Общая стоимость блюд в корзине
+          type: number
+          format: float
+          
+    UpdateItemRequest:
+      type: object
+      required:
+        - quantity
+      properties:
+        quantity:
+          type: integer
+          description: Новое количество единиц блюда
+
+    UpdateItemResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Сообщение о результате обновления
+        updatedItem:
+          $ref: '#/components/schemas/CartItem'
+  
+    CartItem:
+      type: object
+      properties:
+        itemId:
+          description: Уникальный идентификатор блюда
+          type: string
+          format: uuid
+        name:
+          description: Наименование
+          type: string
+        price:
+          description: Стоимость
+          type: number
+          format: float
+        size:
+          description: Размер/объем
+          type: integer
+        calories:
+          description: Калорийность
+          type: integer
+        imageLink:
+          description: Ссылка на изображение
+          type: string
+          format: url
+          example: https://static.tildacdn.com/stor3864-3835-4938-b666-663263666265/31704890.jpg
+        cartTotal:
+          description: Общее количество блюд в корзине
+          type: integer
+        totalPrice:
+          description: Общая стоимость блюд в корзине
+          type: number
+          format: float
+  
+    CreateOrderRequest:
+      type: object
+      required:
+        - place
+        - paymentType
+        - orderItems
+        - itemId
+        - quantity
+        - itemPrice
+      properties:
+        userId: 
+          description: Уникальный идентификатор пользователя
+          type: string
+          format: uuid
+        userName: 
+          description: Имя пользователя
+          type: string
+        userEmail: 
+          description: Электронная почта пользователя
+          type: string
+        userPhone: 
+          description: Номер телефона пользователя
+          type: string
+        place:
+          description: Способ получения заказа
+          type: string
+          enum:
+            - В зале
+            - На вынос
+          default: В зале
+        time:
+          description: время получения заказа
+          type: string
+          format: date-time
+        paymentType:
+          description: Способ оплаты заказа
+          type: string
+          enum:
+            - Банковской картой
+            - Наличными при получении
+          default: Банковской картой
+        loyaltyPointsAdded:
+          description: Начисляемые баллы по программе лояльности
+          type: integer
+        loyaltyPointsCharged:
+          description: Списываемые баллы по программе лояльности
+          type: integer
+        orderItems:
+          type: array
+          description: Позиция заказа
+          items:
+            $ref: '#/components/schemas/OrderItemRequest'
+    
+    CreateOrderResponse:
+      type: object
+      properties:
+        orderId:
+          description: Уникальный идентификатор заказа
+          type: string
+          format: uuid
+        userId: 
+          description: Уникальный идентификатор пользователя
+          type: string
+          format: uuid
+        userName: 
+          description: Имя пользователя
+          type: string
+        userEmail: 
+          description: Электронная почта пользователя
+          type: string
+        userPhone: 
+          description: Номер телефона пользователя
+          type: string
+        timeCreated:
+          description: Время создания заказа
+          type: string
+          format: date-time
+        place:
+          description: Способ получения заказа
+          type: string
+          enum:
+            - В зале
+            - На вынос
+        time:
+          description: время получения заказа
+          type: string
+          format: date-time
+        paymentType:
+          description: Способ оплаты заказа
+          type: string
+          enum:
+            - Банковской картой
+            - Наличными при получении
+          default: Банковской картой
+        loyaltyPointsAdded:
+          description: Начисляемые баллы по программе лояльности
+          type: integer
+        loyaltyPointsCharged:
+          description: Списываемые баллы по программе лояльности
+          type: integer
+        orderItems:
+          description: Позиция заказа
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItemResponse'
+
+    OrderItemRequest:
+      type: object
+      required:
+        - id
+        - quantity
+      properties:
+        itemId:
+          description: Уникальный идентификатор блюда
+          type: string
+          format: uuid
+        quantity:
+          description: Количество единиц блюда
+          type: integer
+        itemPrice:
+          description: Цена за единицу блюда
+          type: number
+          format: float
+        ingredients:
+          type: array
+          title: Ингредиент
+          items:
+            type: object
+            properties:
+              itemId:
+                description: Уникальный идентификатор ингредиента
+                type: string
+                format: uuid
+          
+    OrderItemResponse:
+      type: object
+      properties:
+        itemId:
+          description: Уникальный идентификатор блюда
+          type: string
+          format: uuid
+        quantity:
+          description: Количество единиц блюда
+          type: integer
+        itemPrice:
+          description: Цена за единицу блюда
+          type: number
+          format: float
+        ingredients:
+          $ref: '#/components/schemas/Ingredient'
+
+    OrderList:
+      type: object
+      required:
+        - items
+      properties:
+        ordersTotal:
+          description: Общее количество заказов
+          type: integer
+        items:
+          description: Список заказов
+          type: array
+          title: Items
+          items:
+            $ref: '#/components/schemas/Order'
+      
+    Order:  
+      type: object
+      properties:
+        userId: 
+          description: Уникальный идентификатор пользователя
+          type: string
+          format: uuid
+        orderId:
+          description: Уникальный идентификатор заказа
+          type: string
+          format: uuid
+        status:
+          description: Статус заказа
+          type: string
+          enum:
+          - Создан
+          - Готовится
+          - Готов
+          - На выдаче
+          - Отменен
+          - Получен
+          - Самоотказ
+          - Удален
+        orderSumm:
+          description: Сумма заказа
+          type: number
+          format: float
+        timeCreated:
+          description: Время создания заказа
+          type: string
+          format: date-time
+        orderItems:
+          description: Позиция заказа
+          type: array
+          items:
+            type: object
+            properties:
+              itemId:
+                  description: Уникальный идентификатор блюда
+                  type: string
+                  format: uuid
+              imageLink:
+                description: Ссылка на изображение
+                type: string
+                format: url
+                example: https://static.tildacdn.com/stor3864-3835-4938-b666-663263666265/31704890.jpg
+
+    OrderFull:  
+      type: object
+      properties:
+        userId: 
+          description: Уникальный идентификатор пользователя
+          type: string
+          format: uuid
+        orderId:
+          description: Уникальный идентификатор заказа
+          type: string
+          format: uuid
+        orderNumber:
+          description: Номер для получения заказа в ресторане
+          type: integer
+        status:
+          description: Статус заказа
+          type: string
+          enum:
+          - Создан
+          - Готовится
+          - Готов
+          - На выдаче
+          - Отменен
+          - Получен
+          - Самоотказ
+          - Удален
+        place:
+          description: Способ получения заказа
+          type: string
+          enum:
+            - В зале
+            - На вынос
+        time:
+          description: время получения заказа
+          type: string
+          format: date-time
+        paymentType:
+          description: Способ оплаты заказа
+          type: string
+          enum:
+            - Банковской картой
+            - Наличными при получении
+          default: Банковской картой
+        loyaltyPointsAdded:
+          description: Начисляемые баллы по программе лояльности
+          type: integer
+        loyaltyPointsCharged:
+          description: Списываемые баллы по программе лояльности
+          type: integer
+        orderSumm:
+          description: Сумма заказа
+          type: number
+          format: float
+        timeCreated:
+          description: Время создания заказа
+          type: string
+          format: date-time
+        orderItems:
+          description: Позиция заказа
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+
+    OrderItem:
+      type: object
+      properties:
+        itemId:
+            description: Уникальный идентификатор блюда
+            type: string
+            format: uuid
+        name:
+          description: Наименование
+          type: string
+        price:
+          description: Стоимость
+          type: number
+          format: float
+        size:
+          description: Размер/объем
+          type: integer
+        calories:
+          description: Калорийность
+          type: integer
+        imageLink:
+          description: Ссылка на изображение
+          type: string
+          format: url
+          example: https://static.tildacdn.com/stor3864-3835-4938-b666-663263666265/31704890.jpg
+    
+    OrderStatus:
+      type: object
+      required:
+        - orderId
+        - status
+        - orderNumber
+      properties:
+        orderId:
+          description: Уникальный идентификатор заказа
+          type: string
+          format: uuid
+        orderNumber:
+          description: Номер для получения заказа в ресторане
+          type: integer
+        status:
+          description: Статус заказа
+          type: string
+          enum:
+          - Создан
+          - Готовится
+          - Готов
+          - На выдаче
+          - Отменен
+          - Получен
+          - Самоотказ
+          - Удален
+          
+    ReviewRequest:
+      type: object
+      required:
+        - grade
+        - userId
+      properties:
+        userId: 
+          description: Уникальный идентификатор пользователя
+          type: string
+          format: uuid
+        dishId:
+            description: Уникальный идентификатор блюда
+            type: string
+            format: uuid
+        grade:
+          description: Оценка
+          type: integer
+          enum:
+            - 1
+            - 2
+            - 3
+            - 4
+            - 5
+        positive:
+          description: Достоинства
+          type: string
+        negative:
+          description: Недостатки
+          type: string
+        comment:
+          description: Комментарий к отзыву
+          type: string
+    
+    ReviewResponse:
+      type: object
+      properties:
+        userId:
+          description: Уникальный идентификатор пользователя
+          type: string
+          format: uuid
+        reviewId:
+            description: Уникальный идентификатор отзыва
+            type: string
+            format: uuid
+        dishId:
+            description: Уникальный идентификатор блюда
+            type: string
+            format: uuid
+        grade:
+          description: Оценка
+          type: integer
+          enum:
+            - 1
+            - 2
+            - 3
+            - 4
+            - 5
+        positive:
+          description: Достоинства
+          type: string
+        negative:
+          description: Недостатки
+          type: string
+        comment:
+          description: Комментарий к отзыву
+          type: string
+        timeCreated:
+          description: Время создания отзыва
+          type: string
+          format: date-time
+          
+    UserCreate:
+      type: object
+      required:
+        - userId
+        - phoneNumber
+      properties:
+        userId:
+          description: Уникальный идентификатор пользователя
+          type: string
+          format: uuid
+        phoneNumber:
+          description: Номер телефона пользователя
+          type: string
+        timeCreated:
+          description: Дата регистрации пользователя
+          type: string
+          format: date-time
+
+    UserProfile:
+      type: object
+      required:
+        - userId
+        - phoneNumber
+      properties:
+        userId:
+          description: Уникальный идентификатор пользователя
+          type: string
+          format: uuid
+        firstName:
+          description: Имя пользователя
+          type: string
+        lastName:
+          description: Фамилия пользователя
+          type: string
+        birthday:
+          description: Дата рождения пользователя
+          type: string
+          format: date-time
+        phoneNumber:
+          description: Номер телефона пользователя
+          type: string
+        email:
+          description: Электронная почта пользователя
+          type: string
+        timeCreated:
+          description: Дата регистрации пользователя
+          type: string
+          format: date-time
+
+servers:
+  # Added by API Auto Mocking Plugin
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/spoty/OTUS/3
