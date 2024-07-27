@@ -9,7 +9,6 @@ nav:
     - requirements/nfr.md
     - Функциональные требования:
       - requirements/use_case_diagram.md
-#      - requirements/bpmn_diagram.md
       - requirements/uc01.md
       - requirements/uc02.md
       - requirements/uc03.md
@@ -50,11 +49,12 @@ nav:
     - api/endpoints.md
     - api/api.md
   - Задачи:
-    - tasks/tasks_mvp.md
+    - Задачи для MVP:
+      - tasks/task01.md
+      - tasks/task02.md
+      - tasks/task03.md
+      - tasks/task04.md
     - tasks/tasks_1release.md
-#  - Тест-кейсы:
-#    - test_cases/test_cases_mvp.md
-#    - test_cases/test_cases_1release.md
 
 theme:
   name: material
